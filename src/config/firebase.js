@@ -1,36 +1,32 @@
 const admin = require('firebase-admin');
-const dotenv = require('dotenv');
 
-dotenv.config();
-
-let serviceAccount;
-try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-        // Fix for common issue where newlines in private key are treated as literal "\n" strings
-        if (serviceAccount.private_key) {
-            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-        }
-    } else {
-        serviceAccount = require('../../serviceAccountKey.json');
-    }
-} catch (error) {
-    console.error('Failed to load service account key:', error);
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_KEY is not set.');
+    process.exit(1);
 }
 
+let serviceAccount;
+
 try {
-    if (serviceAccount) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            storageBucket: "restaurant-pos-165f6.firebasestorage.app"
-        });
-        console.log('Firebase Admin Initialized');
-    } else {
-        console.error('Firebase Admin not initialized: No service account provided');
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+    // Fix newline issue in private key
+    if (serviceAccount.private_key) {
+        serviceAccount.private_key =
+            serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-    console.log('Firebase Admin Initialized');
 } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
+    console.error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY JSON:', error);
+    process.exit(1);
+}
+
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: "restaurant-pos-165f6.firebasestorage.app"
+    });
+
+    console.log('✅ Firebase Admin Initialized');
 }
 
 const db = admin.firestore();
