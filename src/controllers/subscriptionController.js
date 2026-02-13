@@ -10,9 +10,9 @@ const polar = new Polar({
 // Verify if these are Product IDs or Checkout Link IDs.
 // If valid Product IDs, `polar.checkouts.create` works.
 const PLAN_TO_PRODUCT = {
-    starter: "polar_cl_yo7F72nGmXb0HaDtWGo5DPY1DqkFxT4xsPTOO0F5qfo",
-    growth: "polar_cl_OKU05fZlrnTppzBg0ApsbUPV0VjQi1DaMO4g32n2vWi",
-    pro: "polar_cl_LbLsX2Qf6hMOw3d1CcwYT5EXQSMTnWfL4x0uO00B28t"
+    starter: "polar_cl_a75kPybmvW25pzoW8DsSERWel0BFcNYiUDtLL2eu45G",
+    pro: "polar_cl_HU1Wdzk3tZfLYTYPl4vjddKnIuhQPspTWQWjJ32GhoX",
+    business: "polar_cl_r2LV3hCfSCwVIStBxWNV2m4Gy3mX9wVjR0nXo4VvE1f"
 };
 
 // 1. Create Checkout

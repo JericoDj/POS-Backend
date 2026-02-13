@@ -1,6 +1,25 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
+const dotenv = require('dotenv');
+// Configure dotenv to load from .env file
+dotenv.config();
+
 const axios = require('axios');
+
+let serviceAccount;
+try {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        // Fix for common issue where newlines in private key are treated as literal "\n" strings
+        if (serviceAccount.private_key) {
+            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+    } else {
+        serviceAccount = require('../serviceAccountKey.json');
+    }
+} catch (error) {
+    console.error('Failed to load service account key:', error.message);
+    process.exit(1);
+}
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)

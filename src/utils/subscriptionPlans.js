@@ -1,17 +1,27 @@
 const SUBSCRIPTION_PLANS = {
-    BASIC: {
-        name: 'Basic',
+    FREE: {
+        name: 'Free',
         price: 0,
+        limits: {
+            products: 10,
+            categories: 2,
+            orders: 20, // per month maybe? for now total
+            reports: false
+        }
+    },
+    STARTER: {
+        name: 'Starter',
+        price: 29,
         limits: {
             products: 50,
             categories: 10,
-            orders: 100, // per month maybe? for now total
-            reports: false
+            orders: 100,
+            reports: true
         }
     },
     PRO: {
         name: 'Pro',
-        price: 29,
+        price: 79,
         limits: {
             products: 500,
             categories: 50,
@@ -19,9 +29,9 @@ const SUBSCRIPTION_PLANS = {
             reports: true
         }
     },
-    ENTERPRISE: {
-        name: 'Enterprise',
-        price: 99,
+    BUSINESS: {
+        name: 'Business',
+        price: 149,
         limits: {
             products: Infinity,
             categories: Infinity,
