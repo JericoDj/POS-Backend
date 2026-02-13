@@ -49,7 +49,11 @@ const createCheckout = async (req, res) => {
 
         // Metadata mapping for Polar Checkout Links
         // Polar accepts metadata as nested object syntax in query params: metadata[key]=value
-        params.append('metadata[transactionId]', txRef.id);
+        // Use standard reference_id for Polar to track the transaction
+        // This is more reliable than custom metadata for some flows
+        params.append('reference_id', txRef.id);
+
+        // Keep metadata as backup
         params.append('metadata[businessId]', businessId);
         params.append('metadata[planId]', planId);
         params.append('metadata[firebaseUid]', uid);
@@ -110,7 +114,8 @@ const handleWebhook = async (req, res) => {
 async function handleOrderPaid(payload) {
     // Extract metadata
     const metadata = payload.metadata || {};
-    const transactionId = metadata.transactionId || metadata.reference_id; // Check both
+    // Check payload.reference_id (standard) then metadata fallback
+    const transactionId = payload.reference_id || metadata.transactionId || metadata.reference_id;
 
     if (!transactionId) {
         console.warn('❌ Order Paid missing transactionId metadata');
@@ -149,7 +154,8 @@ async function handleOrderPaid(payload) {
 // Start Helper: Handle Subscription Update
 async function handleSubscriptionUpdate(subscription) {
     const metadata = subscription.metadata || {};
-    const transactionId = metadata.transactionId || metadata.reference_id;
+    // Check payload.reference_id (standard) then metadata fallback
+    const transactionId = subscription.reference_id || metadata.transactionId || metadata.reference_id;
     let businessId = metadata.businessId;
 
     // Use transaction to find business if missing
