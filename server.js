@@ -27,7 +27,8 @@ app.use('/api/sales', require('./src/routes/salesRoutes'));
 
 
 // Local development using `node server.js` or `nodemon server.js`
-if (require.main === module) {
+// Vercl will trigger this with NODE_ENV=production
+if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
