@@ -180,11 +180,46 @@ const deleteAccount = async (req, res) => {
     }
 };
 
+
+// 7. Refresh ID Token
+const refreshToken = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    if (!FIREBASE_WEB_API_KEY) {
+        return res.status(500).json({ message: 'Missing FIREBASE_WEB_API_KEY' });
+    }
+
+    try {
+        const response = await axios.post(
+            `https://securetoken.googleapis.com/v1/token?key=${FIREBASE_WEB_API_KEY}`,
+            {
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            }
+        );
+
+        // Firebase returns: id_token, refresh_token, expires_in, user_id
+        res.status(200).json(response.data);
+
+    } catch (error) {
+        console.error('Error refreshing token:', error.response?.data || error.message);
+        res.status(401).json({
+            message: 'Token refresh failed',
+            error: error.response?.data?.error?.message || error.message
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
     getMe,
     updateUser,
     forgotPassword,
-    deleteAccount
+    deleteAccount,
+    refreshToken
 };
