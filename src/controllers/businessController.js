@@ -104,51 +104,42 @@ const getBusinessProfile = async (req, res) => {
 // Get All Businesses for the authenticated user
 const getAllBusinesses = async (req, res) => {
     const uid = req.user.uid;
-    // Use businessIds from token (or fetch user if needed)
-    const businessIds = req.user.businessIds || [];
 
     try {
+        // Fetch the user document to get the latest businessIds
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const userData = userDoc.data();
+        const businessIds = userData.businessIds || [];
+
         if (businessIds.length === 0) {
+            // Fallback: Check if there's a legacy single businessId
+            if (userData.businessId) {
+                const legacyDoc = await db.collection('businesses').doc(userData.businessId).get();
+                if (legacyDoc.exists) {
+                    return res.status(200).json([{ id: legacyDoc.id, ...legacyDoc.data() }]);
+                }
+            }
             return res.status(200).json([]);
         }
 
-        // Firestore 'in' query supports up to 10 values. 
-        // If > 10, we might need multiple queries or just fetch all and filter (not scalable).
-        // For now, assuming < 10 businesses per user.
-
         const businesses = [];
 
-        // We can't easily do .where(FieldPath.documentId(), 'in', businessIds) AND orderBy('createdAt') 
-        // without a composite index and some restrictions.
-        // Easier: Promise.all of gets if list is small.
+        // Fetch businesses in parallel
+        const businessPromises = businessIds.map(id => db.collection('businesses').doc(id).get());
+        const snapshots = await Promise.all(businessPromises);
 
-        if (businessIds.length <= 10) {
-            // Option A: IN query (requires documentId matching)
-            // const snapshot = await db.collection('businesses').where(admin.firestore.FieldPath.documentId(), 'in', businessIds).get();
-
-            // Option B: Multi-get (often faster/simpler for ID list)
-            const refs = businessIds.map(id => db.collection('businesses').doc(id));
-            const snapshots = await db.getAll(...refs);
-
-            snapshots.forEach(doc => {
-                if (doc.exists) {
-                    businesses.push({ id: doc.id, ...doc.data() });
-                }
-            });
-
-        } else {
-            // Fallback for > 10 (rare)
-            const snapshot = await db.collection('businesses')
-                .where('ownerId', '==', uid) // Fallback to just owned
-                .get();
-            snapshot.forEach(doc => {
+        snapshots.forEach(doc => {
+            if (doc.exists) {
                 businesses.push({ id: doc.id, ...doc.data() });
-            });
-        }
+            }
+        });
 
-        // Client-side sort if needed since we lost orderBy
+        // Sort by createdAt desc
         businesses.sort((a, b) => {
-            // Handle missing createdAt
             const tA = a.createdAt ? a.createdAt.toMillis() : 0;
             const tB = b.createdAt ? b.createdAt.toMillis() : 0;
             return tB - tA;
