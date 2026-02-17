@@ -172,6 +172,52 @@ const deleteMultipleProducts = async (req, res) => {
     }
 };
 
-module.exports = { createProduct, getProducts, getProductById, updateProduct, deleteProduct, deleteMultipleProducts };
+// Get Products by Category with Pagination and Exclusion
+const getProductsByCategory = async (req, res) => {
+    const { categoryId, excludedIds = [], limit = 20, lastId } = req.body;
+    const businessId = req.user.businessId;
+
+    if (!categoryId) {
+        return res.status(400).json({ message: 'Category ID is required' });
+    }
+
+    try {
+        let query = db.collection('products')
+            .where('businessId', '==', businessId)
+            .where('categoryId', '==', categoryId)
+            .orderBy('createdAt', 'desc');
+
+        // Cursor-based pagination (Start After Last ID)
+        if (lastId) {
+            const lastDoc = await db.collection('products').doc(lastId).get();
+            if (lastDoc.exists) {
+                query = query.startAfter(lastDoc);
+            }
+        }
+
+        // Fetch a bit more than limit to account for client-side filtering if needed, 
+        // though excludedIds usage is limited in Firestore. 
+        // We limit the query to 'limit' size.
+        query = query.limit(parseInt(limit));
+
+        const snapshot = await query.get();
+        const products = [];
+
+        snapshot.forEach(doc => {
+            // Filter out if in excludedIds list (Client-side filtering on server)
+            if (!excludedIds.includes(doc.id)) {
+                products.push({ id: doc.id, ...doc.data() });
+            }
+        });
+
+        res.status(200).json(products);
+
+    } catch (error) {
+        console.error('Error fetching products by category:', error);
+        res.status(500).json({ message: 'Error fetching products', error: error.message });
+    }
+};
+
+module.exports = { createProduct, getProducts, getProductById, updateProduct, deleteProduct, deleteMultipleProducts, getProductsByCategory };
 
 
