@@ -26,7 +26,8 @@ const register = async (req, res) => {
             email: userRecord.email,
             displayName: displayName || '',
             role: role || 'staff', // owner, manager, staff
-            businessId: businessId || null,
+            businessIds: businessId ? [businessId] : [], // Array of business IDs
+            businessId: businessId || null, // Keeping for backward compatibility or "current" context
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             status: 'active',
@@ -37,7 +38,8 @@ const register = async (req, res) => {
         // Set custom claims
         await admin.auth().setCustomUserClaims(userRecord.uid, {
             role: role || 'staff',
-            businessId: businessId || null
+            businessId: businessId || null,
+            businessIds: businessId ? [businessId] : []
         });
 
         res.status(201).json({

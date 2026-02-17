@@ -30,15 +30,27 @@ const createBusiness = async (req, res) => {
 
         // Update User with businessId and owner role
         await db.collection('users').doc(uid).update({
-            businessId: businessId,
+            businessIds: admin.firestore.FieldValue.arrayUnion(businessId), // Add new business directly to array
             role: 'owner',
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
+        // Fetch current user data to get all businessIds for custom claims update
+        // (Optimally we should trust what we just added, but let's be safe or just append to what we know)
+        // Actually, custom claims has a size limit (1000 bytes). If user has MANY businesses, this might break. 
+        // For now, assuming reasonable number.
+
+        // Retrieve current claims or user doc to get full list?
+        // Let's just get the user doc we just updated (or rely on logic that we know the previous state).
+        // Better: Get the user doc to be sure.
+        const userDoc = await db.collection('users').doc(uid).get();
+        const currentBusinessIds = userDoc.data().businessIds || [businessId];
+
         // Update Custom Claims
         await admin.auth().setCustomUserClaims(uid, {
             role: 'owner',
-            businessId: businessId // This is crucial for tenancy isolation
+            businessId: businessId, // Set as default/active
+            businessIds: currentBusinessIds
         });
 
         // We might need to refresh the token on the client side to get the new claims
@@ -92,15 +104,54 @@ const getBusinessProfile = async (req, res) => {
 // Get All Businesses for the authenticated user
 const getAllBusinesses = async (req, res) => {
     const uid = req.user.uid;
+    // Use businessIds from token (or fetch user if needed)
+    const businessIds = req.user.businessIds || [];
+
     try {
-        const snapshot = await db.collection('businesses')
-            .where('ownerId', '==', uid)
-            .orderBy('createdAt', 'desc')
-            .get();
+        if (businessIds.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // Firestore 'in' query supports up to 10 values. 
+        // If > 10, we might need multiple queries or just fetch all and filter (not scalable).
+        // For now, assuming < 10 businesses per user.
 
         const businesses = [];
-        snapshot.forEach(doc => {
-            businesses.push({ id: doc.id, ...doc.data() });
+
+        // We can't easily do .where(FieldPath.documentId(), 'in', businessIds) AND orderBy('createdAt') 
+        // without a composite index and some restrictions.
+        // Easier: Promise.all of gets if list is small.
+
+        if (businessIds.length <= 10) {
+            // Option A: IN query (requires documentId matching)
+            // const snapshot = await db.collection('businesses').where(admin.firestore.FieldPath.documentId(), 'in', businessIds).get();
+
+            // Option B: Multi-get (often faster/simpler for ID list)
+            const refs = businessIds.map(id => db.collection('businesses').doc(id));
+            const snapshots = await db.getAll(...refs);
+
+            snapshots.forEach(doc => {
+                if (doc.exists) {
+                    businesses.push({ id: doc.id, ...doc.data() });
+                }
+            });
+
+        } else {
+            // Fallback for > 10 (rare)
+            const snapshot = await db.collection('businesses')
+                .where('ownerId', '==', uid) // Fallback to just owned
+                .get();
+            snapshot.forEach(doc => {
+                businesses.push({ id: doc.id, ...doc.data() });
+            });
+        }
+
+        // Client-side sort if needed since we lost orderBy
+        businesses.sort((a, b) => {
+            // Handle missing createdAt
+            const tA = a.createdAt ? a.createdAt.toMillis() : 0;
+            const tB = b.createdAt ? b.createdAt.toMillis() : 0;
+            return tB - tA;
         });
 
         res.status(200).json(businesses);
@@ -192,15 +243,26 @@ const deleteBusiness = async (req, res) => {
         await docRef.delete();
 
         // Also remove business association from user?
+        // Also remove business association from user
         await db.collection('users').doc(uid).update({
-            businessId: admin.firestore.FieldValue.delete(),
-            role: 'user', // revert to simple user
+            businessIds: admin.firestore.FieldValue.arrayRemove(id), // Remove specific business ID
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            // We don't necessarily revert role to 'user' if they have other businesses.
+            // Complex logic: Check if businessIds is empty?
         });
 
-        // Update Custom Claims to remove businessId
+        // Refresh user doc to see if they have other businesses
+        const userDoc = await db.collection('users').doc(uid).get();
+        const remainingBusinessIds = userDoc.data().businessIds || [];
+
+        const newRole = remainingBusinessIds.length > 0 ? 'owner' : 'user';
+        const nextBusinessId = remainingBusinessIds.length > 0 ? remainingBusinessIds[0] : null;
+
+        // Update Custom Claims
         await admin.auth().setCustomUserClaims(uid, {
-            role: 'user'
+            role: newRole,
+            businessId: nextBusinessId,
+            businessIds: remainingBusinessIds
         });
 
         res.status(200).json({ message: 'Business deleted successfully' });
