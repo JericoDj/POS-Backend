@@ -62,3 +62,18 @@
 ## 6. Delete Product (Single)
 **Method:** `DELETE`
 **URL:** `/:id`
+**Note:** Deletes a specific product by its ID.
+
+## 7. Get Products by Category (Optimized)
+**Method:** `POST`
+**URL:** `/category`
+**Note:** Use this to fetch products for a specific category, with support for pagination and excluding specific IDs (to save bandwidth/read costs on known items).
+**Body:**
+```json
+{
+    "categoryId": "CATEGORY_ID_HERE",
+    "limit": 20,
+    "lastId": "OPTIONAL_LAST_PRODUCT_ID_FOR_PAGINATION",
+    "excludedIds": ["OPTIONAL_ARRAY", "OF_IDS", "TO_EXCLUDE"]
+}
+```
