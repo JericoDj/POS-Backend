@@ -1,8 +1,23 @@
 const { db, admin } = require('../config/firebase');
 
 const createCategory = async (req, res) => {
-    const { name, description, color } = req.body;
-    const businessId = req.user.businessId;
+    const { name, description, color, businessId } = req.body;
+
+    // Determine effective businessId
+    let effectiveBusinessId = req.user.businessId; // Default from header/middleware
+
+    // If businessId is provided in body, validate and use it
+    if (businessId) {
+        const userBusinessIds = req.user.businessIds || [];
+        if (!userBusinessIds.includes(businessId)) {
+            return res.status(403).json({ message: 'Unauthorized: You do not have access to the provided businessId' });
+        }
+        effectiveBusinessId = businessId;
+    }
+
+    if (!effectiveBusinessId) {
+        return res.status(400).json({ message: 'Business context is missing. Please provide X-Business-Id header or businessId in body.' });
+    }
 
     if (!name) {
         return res.status(400).json({ message: 'Name is required' });
@@ -13,7 +28,7 @@ const createCategory = async (req, res) => {
             name,
             description: description || '',
             color: color || '#000000',
-            businessId,
+            businessId: effectiveBusinessId,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             status: 'active'
@@ -28,7 +43,21 @@ const createCategory = async (req, res) => {
 };
 
 const getCategories = async (req, res) => {
-    const businessId = req.user.businessId;
+    let businessId = req.user.businessId;
+    const queryBusinessId = req.query.businessId;
+
+    // Allow overriding via query param if user belongs to that business
+    if (queryBusinessId) {
+        const userBusinessIds = req.user.businessIds || [];
+        if (!userBusinessIds.includes(queryBusinessId)) {
+            return res.status(403).json({ message: 'Unauthorized: You do not have access to the provided businessId' });
+        }
+        businessId = queryBusinessId;
+    }
+
+    if (!businessId) {
+        return res.status(400).json({ message: 'Business context required' });
+    }
 
     try {
         const snapshot = await db.collection('categories')

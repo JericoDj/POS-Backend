@@ -1,8 +1,11 @@
 # Sales Routes Postman Examples
 
-Base URL: `http://localhost:5001/api/sales`
+**Base URL:** `{{base_url}}/api/sales`
+**Authorization:** Bearer Token
 
-**Global Header:** `Authorization: Bearer <ID_TOKEN>`
+**Headers:**
+- `Content-Type`: `application/json`
+- `X-Business-Id`: `YOUR_BUSINESS_ID` (Optional: Use to switch context if you have multiple businesses.)
 
 ## 1. Create Sale (Record Transaction)
 **Method:** `POST`

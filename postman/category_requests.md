@@ -1,8 +1,11 @@
-    # Category Routes Postman Examples
+# Category Routes Postman Examples
     
-    Base URL: `http://localhost:5001/api/categories`
-    
-    **Global Header:** `Authorization: Bearer <ID_TOKEN>`
+   **Base URL:** `{{base_url}}/api/categories`
+**Authorization:** Bearer Token (JWT from Login)
+
+**Headers:**
+- `Content-Type`: `application/json`
+- `X-Business-Id`: `YOUR_BUSINESS_ID` (Optional: Use to switch context if you have multiple businesses. Defaults to your primary business if omitted.)
     
     ## 1. Create Category
     **Method:** `POST`
@@ -10,16 +13,19 @@
     **Body:**
     ```json
     {
-      "name": "Electronics",
-      "description": "Gadgets and devices",
-      "color": "#FF5733"
+        "name": "Beverages",
+        "description": "Drinks and Refreshments",
+        "color": "#FF5733",
+        "businessId": "OPTIONAL_BUSINESS_ID_OVERRIDE" 
     }
     ```
     
     ## 2. Get All Categories
     **Method:** `GET`
     **URL:** `/`
-    **Note:** Returns all categories associated with the authenticated user's business.
+    **Query Params (Optional):**
+    - `?businessId=YOUR_BUSINESS_ID` (Override header context)
+    **Note:** Returns all categories associated with the authenticated user's business (or specific business if param provided).
     
     ## 3. Get Category by ID
     **Method:** `GET`
