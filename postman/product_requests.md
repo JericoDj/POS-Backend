@@ -18,7 +18,7 @@ Base URL: `http://localhost:5001/api/products`
 }
 ```
 **Notes:** 
-- Requires `name` and `price`.
+- Requires `name`, `price`, and `categoryId`.
 - **Subscription Limit:** This endpoint checks if the business has reached its product limit based on the subscription plan. If limit reached, returns `403`.
 
 ## 2. Get All Products
@@ -26,7 +26,7 @@ Base URL: `http://localhost:5001/api/products`
 **URL:** `/`
 **Query Params (Optional):**
 - `?categoryId=CATEGORY_ID_HERE` (Filter by category)
-**Note:** Returns products ordered by `createdAt` desc.
+**Note:** Returns products associated with the authenticated user's business, ordered by `createdAt` desc.
 
 ## 3. Get Product by ID
 **Method:** `GET`

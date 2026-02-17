@@ -19,6 +19,7 @@
     ## 2. Get All Categories
     **Method:** `GET`
     **URL:** `/`
+    **Note:** Returns all categories associated with the authenticated user's business.
     
     ## 3. Get Category by ID
     **Method:** `GET`

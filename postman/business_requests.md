@@ -26,7 +26,7 @@ Base URL: `http://localhost:5001/api/business`
 ## 3. Get All Businesses
 **Method:** `GET`
 **URL:** `/`
-**Note:** Returns a list of all businesses (Admin/Directory).
+**Note:** Returns a list of all businesses owned by the authenticated user.
 
 ## 4. Get Business By ID
 **Method:** `GET`

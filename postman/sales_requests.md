@@ -22,6 +22,7 @@ Base URL: `http://localhost:5001/api/sales`
 ## 2. Get Sales History
 **Method:** `GET`
 **URL:** `/`
+**Note:** Returns sales history associated with the authenticated user's business.
 
 ## 3. Get Sale by ID
 **Method:** `GET`

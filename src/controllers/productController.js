@@ -4,8 +4,8 @@ const createProduct = async (req, res) => {
     const { name, categoryId, price, stock, details } = req.body;
     const businessId = req.user.businessId;
 
-    if (!name || !price) {
-        return res.status(400).json({ message: 'Name and Price are required' });
+    if (!name || !price || !categoryId) {
+        return res.status(400).json({ message: 'Name, Price, and Category ID are required' });
     }
 
     try {

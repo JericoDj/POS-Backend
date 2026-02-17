@@ -89,10 +89,12 @@ const getBusinessProfile = async (req, res) => {
 };
 
 
-// Get All Businesses (Admin or Directory listing)
+// Get All Businesses for the authenticated user
 const getAllBusinesses = async (req, res) => {
+    const uid = req.user.uid;
     try {
         const snapshot = await db.collection('businesses')
+            .where('ownerId', '==', uid)
             .orderBy('createdAt', 'desc')
             .get();
 
