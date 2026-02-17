@@ -67,36 +67,55 @@ const createBusiness = async (req, res) => {
     }
 };
 
+// Get Business Profile(s) for the authenticated user
+// Note: This endpoint now returns an array of businesses, similar to getAllBusinesses
 const getBusinessProfile = async (req, res) => {
-    // businessId is attached to req.user (if we trust the token claim) or we can look it up in Firestore
-    // Ideally, use the token claim for tenancy isolation.
-    // However, immediately after creation, the token might be stale.
-    // For a robust implementation, middleware should have verified the token.
-
-    // If the token is stale (e.g. just created business), req.user.businessId might be undefined.
-    // In that case, we can check the user doc in Firestore, but that's an extra read.
-
-    let businessId = req.user.businessId;
-
-    if (!businessId) {
-        // Fallback: Check Firestore user doc
-        const userDoc = await db.collection('users').doc(req.user.uid).get();
-        businessId = userDoc.data()?.businessId;
-    }
-
-    if (!businessId) {
-        return res.status(404).json({ message: 'No business associated with this user' });
-    }
+    const uid = req.user.uid;
 
     try {
-        const doc = await db.collection('businesses').doc(businessId).get();
-        if (!doc.exists) {
-            return res.status(404).json({ message: 'Business not found' });
+        // Fetch the user document to get the latest businessIds
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists) {
+            return res.status(404).json({ message: 'User not found' });
         }
-        res.status(200).json({ id: doc.id, ...doc.data() });
+
+        const userData = userDoc.data();
+        const businessIds = userData.businessIds || [];
+
+        if (businessIds.length === 0) {
+            // Fallback: Check if there's a legacy single businessId
+            if (userData.businessId) {
+                const legacyDoc = await db.collection('businesses').doc(userData.businessId).get();
+                if (legacyDoc.exists) {
+                    return res.status(200).json([{ id: legacyDoc.id, ...legacyDoc.data() }]);
+                }
+            }
+            return res.status(200).json([]);
+        }
+
+        const businesses = [];
+
+        // Fetch businesses in parallel
+        const businessPromises = businessIds.map(id => db.collection('businesses').doc(id).get());
+        const snapshots = await Promise.all(businessPromises);
+
+        snapshots.forEach(doc => {
+            if (doc.exists) {
+                businesses.push({ id: doc.id, ...doc.data() });
+            }
+        });
+
+        // Sort by createdAt desc
+        businesses.sort((a, b) => {
+            const tA = a.createdAt ? a.createdAt.toMillis() : 0;
+            const tB = b.createdAt ? b.createdAt.toMillis() : 0;
+            return tB - tA;
+        });
+
+        res.status(200).json(businesses);
     } catch (error) {
-        console.error('Error fetching business:', error);
-        res.status(500).json({ message: 'Error fetching business', error: error.message });
+        console.error('Error fetching business profiles:', error);
+        res.status(500).json({ message: 'Error fetching business profiles', error: error.message });
     }
 };
 
