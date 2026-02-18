@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createBusiness, getBusinessProfile, getAllBusinesses, getBusinessById, updateBusiness, deleteBusiness } = require('../controllers/businessController');
+const { createBusiness, getBusinessProfile, getAllBusinesses, getBusinessById, updateBusiness, deleteBusiness, updateSubscription } = require('../controllers/businessController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 router.post('/', verifyToken, createBusiness);
