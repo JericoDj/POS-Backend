@@ -13,4 +13,9 @@ router.put('/:id', verifyToken, updateBusiness);
 router.delete('/:id', verifyToken, deleteBusiness);
 
 
+
+// Subscription (Bypass strict owner check for now, relies on controller logic)
+router.post('/:id/subscription', verifyToken, updateSubscription);
+
+
 module.exports = router;

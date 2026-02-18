@@ -7,12 +7,13 @@ const polar = new Polar({
 });
 
 // Plan Mapping (Using provided Polar Checkouts/Product IDs)
-// Verify if these are Product IDs or Checkout Link IDs.
-// If valid Product IDs, `polar.checkouts.create` works.
+// Plan Mapping (Using provided Polar Checkouts/Product IDs)
+// TODO: Replace with actual Checkout Link IDs from Polar for the new pricing structure
 const PLAN_TO_PRODUCT = {
-    starter: "polar_cl_a75kPybmvW25pzoW8DsSERWel0BFcNYiUDtLL2eu45G",
-    pro: "polar_cl_HU1Wdzk3tZfLYTYPl4vjddKnIuhQPspTWQWjJ32GhoX",
-    business: "polar_cl_r2LV3hCfSCwVIStBxWNV2m4Gy3mX9wVjR0nXo4VvE1f"
+    starter: "REPLACE_WITH_STARTER_LINK_ID",
+    pro: "REPLACE_WITH_PRO_LINK_ID",
+    business: "REPLACE_WITH_BUSINESS_LINK_ID",
+    enterprise: "REPLACE_WITH_ENTERPRISE_LINK_ID"
 };
 
 // 1. Create Checkout

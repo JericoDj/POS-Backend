@@ -25,6 +25,8 @@ app.use('/api/categories', require('./src/routes/categoryRoutes'));
 app.use('/api/products', require('./src/routes/productRoutes'));
 app.use('/api/sales', require('./src/routes/salesRoutes'));
 
+app.use('/api/users', require('./src/routes/userRoutes'));
+
 
 
 // Local development using `node server.js` or `nodemon server.js`
