@@ -1,55 +1,88 @@
-# Business Routes Postman Examples
+# Business Requests
 
-Base URL: `http://localhost:5001/api/business`
+## General
 
-**Global Header:** `Authorization: Bearer <ID_TOKEN>`
-
-## 1. Create Business
-**Method:** `POST`
-**URL:** `/`
-**Body:**
+### Create Business
+**URL**: `{{baseUrl}}/api/businesses`
+**Method**: `POST`
+**Auth**: Bearer Token required
+**Body**:
 ```json
 {
-  "name": "My Awesome Store",
-  "address": "123 Main St",
-  "contact": "555-0199",
-  "type": "Retail"
+    "name": "My Coffee Shop",
+    "address": "123 Main St",
+    "contact": "555-0123",
+    "type": "retail"
 }
 ```
-**Note:** This creates the business and automatically promotes the creating user to "owner" of that business. **You must refresh the ID token on the client side after this request to pick up the new `owner` role and `businessId` claims.**
 
-## 2. Get Business Profile (My Business)
-**Method:** `GET`
-**URL:** `/profile`
-**Note:** Fetches the business associated with the logged-in user. Useful for the dashboard.
+### Get All Businesses (Profile)
+Returns all businesses associated with the authenticated user.
+**URL**: `{{baseUrl}}/api/businesses` (or `/api/businesses/profile`, aliases to same logic)
+**Method**: `GET`
+**Auth**: Bearer Token required
 
-## 3. Get All Businesses
-**Method:** `GET`
-**URL:** `/`
-**Note:** Returns a list of all businesses owned by the authenticated user.
+### Get Business by ID
+**URL**: `{{baseUrl}}/api/businesses/:id`
+**Method**: `GET`
+**Auth**: Bearer Token required
 
-## 4. Get Business By ID
-**Method:** `GET`
-**URL:** `/:id` 
-*Replace `:id` with actual Business ID (e.g., `FGXtVM6bzgeZC5FXa9Nf`)*
-
-## 5. Update Business
-**Method:** `PUT`
-**URL:** `/:id`
-**Body:**
+### Update Business
+**URL**: `{{baseUrl}}/api/businesses/:id`
+**Method**: `PUT`
+**Auth**: Bearer Token required
+**Body** (JSON):
 ```json
 {
-  "name": "My Awesome Store (Updated)",
-  "contact": "555-1234",
-  "settings": {
-      "currency": "EUR",
-      "timezone": "CET"
-  }
+    "name": "Updated Shop Name",
+    "settings": {
+        "currency": "PHP"
+    }
 }
 ```
-**Note:** Only the **Owner** of the business can update it. The `:id` must match the user's `businessId`.
 
-## 6. Delete Business
-**Method:** `DELETE`
-**URL:** `/:id`
-**Note:** Only the **Owner** can delete the business. This action deletes the business document and resets the user's role to `user` (removing the `businessId` association).
+### Delete Business
+**URL**: `{{baseUrl}}/api/businesses/:id`
+**Method**: `DELETE`
+**Auth**: Bearer Token required
+
+---
+
+## Subscription
+
+### Update Subscription (Subscribe/Unsubscribe)
+Directly update the subscription status and details for a business. Used by the mobile app after a successful In-App Purchase or cancellation.
+
+**URL**: `{{baseUrl}}/api/businesses/:id/subscription`
+**Method**: `POST`
+**Auth**: Bearer Token required
+
+#### Subscribe (Activate)
+**Body** (JSON):
+```json
+{
+  "status": "active",
+  "planId": "pro",
+  "provider": "apple_store", // or 'google_play'
+  "productId": "com.myapp.pro.monthly",
+  "startDate": 1708300000000,
+  "expiresAt": 1710978400000
+}
+```
+
+#### Unsubscribe (Cancel)
+**Body** (JSON):
+```json
+{
+  "status": "canceled",
+  "planId": "pro", // optional, keeps record of what was canceled
+  "canceledAt": 1708305000000
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Subscription updated successfully"
+}
+```
